@@ -12,9 +12,9 @@ Data Analytics: Provides real-time statistics on the number of files discovered.
 Error Logging: In case of compression failure, details are logged into a not_found.txt file for further investigation.
 
 **Usage**
-Ensure that you have installed the Beautiful Soup 4 library by running pip3 install bs4.
+Ensure that you have installed the Beautiful Soup 4 library by running **pip3 install bs4**.
 To execute the script, open your terminal and run the following command:
-python3 SyncBack.py
+**python3 SyncBack.py**
 
 **Usage**
 To utilize this script, simply follow the on-screen prompts to input the name of the HTML file you wish to read. You will then be asked whether you would like to compress the discovered file paths into a ZIP archive. Upon completion, the script will display the total number of files discovered and, if applicable, any errors encountered during the compression process will be logged in the not_found.txt file.
