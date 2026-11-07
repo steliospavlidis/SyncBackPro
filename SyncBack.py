@@ -31,35 +31,49 @@ def get_next_log_number():
         log_number += 1
     return log_number
 
+# Build the path stored inside the ZIP, keeping the folder structure so files
+# with the same name in different folders don't overwrite each other.
+# e.g. C:\Data\Reports\a.txt -> C/Data/Reports/a.txt
+#      \\server\share\a.txt  -> server/share/a.txt
+def archive_name_for(file_path):
+    drive, rest = os.path.splitdrive(os.path.abspath(file_path))
+    drive = drive.replace(':', '').strip('\\/')
+    parts = [p for p in drive.replace('\\', '/').split('/') + rest.replace('\\', '/').split('/') if p]
+    return '/'.join(parts)
+
 # Function to zip files from the latest log file
 def zip_files_from_latest_log(log_filename):
     missing_files = []
+    zipped_count = 0
     try:
         with open(log_filename, 'r', encoding='utf-8') as f:
             file_paths = f.readlines()
-        
-        file_paths = [path.strip() for path in file_paths]
-        
+
+        # Strip whitespace, drop blank lines and repeated paths (keep order)
+        file_paths = list(dict.fromkeys(path.strip() for path in file_paths if path.strip()))
+
         zip_filename = f"log_files_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip"
-        
+
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for file_path in file_paths:
-                if os.path.exists(file_path):
-                    zipf.write(file_path, os.path.basename(file_path))
+                if os.path.isfile(file_path):
+                    zipf.write(file_path, archive_name_for(file_path))
+                    zipped_count += 1
                 else:
                     missing_files.append(file_path)
-        
+
         if missing_files:
             logging.warning(f"{len(missing_files)} files were missing and not added to the ZIP.")
             with open('not_found.txt', 'w', encoding='utf-8') as nf:
                 for path in missing_files:
                     nf.write(f"{path}\n")
-        
-        if os.path.getsize(zip_filename) == 0:
+
+        # An empty ZIP is still ~22 bytes, so check what was added, not the file size
+        if zipped_count == 0:
             os.remove(zip_filename)
             logging.warning("No files were zipped. ZIP file has not been created.")
         else:
-            logging.info(f"Files zipped as {zip_filename}")
+            logging.info(f"{zipped_count} files zipped as {zip_filename}")
 
     except FileNotFoundError:
         logging.error(f"Log file {log_filename} not found.")
